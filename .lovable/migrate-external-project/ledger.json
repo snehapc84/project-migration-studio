@@ -1,0 +1,9 @@
+[
+ {"capability":"code","source":"TanStack Start app","outcome":"migrate","status":"done","next_action":"none"},
+ {"capability":"schema","source":"drizzle migration 0000","outcome":"migrate","status":"done","next_action":"none"},
+ {"capability":"records","source":"demo seed in migration","outcome":"migrate","status":"done","next_action":"real lecturer/student rows pending export from old backend"},
+ {"capability":"auth identities","source":"name+phone sign-in creating accounts on demand","outcome":"migrate","status":"done","next_action":"accounts recreate on first sign-in; student rows need export to keep registrations"},
+ {"capability":"authorization","source":"user_roles + RLS","outcome":"migrate","status":"done","next_action":"none"},
+ {"capability":"realtime","source":"lecturers, timetable_entries","outcome":"migrate","status":"done","next_action":"none"},
+ {"capability":"storage/payments/email/webhooks/schedules/secrets","source":"none detected","outcome":"n/a","status":"verified","next_action":"none"}
+]
