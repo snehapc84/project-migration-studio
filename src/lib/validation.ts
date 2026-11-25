@@ -50,3 +50,44 @@ export const loginSchema = z.object({
 });
 
 export type LoginInput = z.infer<typeof loginSchema>;
+
+export type Identifier = { kind: "email"; value: string } | { kind: "phone"; value: string };
+
+/** An email (lowercased) or a phone number (digits only); null when it is neither. */
+export function parseIdentifier(raw: string): Identifier | null {
+  const v = raw.trim();
+  if (v.includes("@")) {
+    const email = v.toLowerCase();
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254 ? { kind: "email", value: email } : null;
+  }
+  if (!/^[0-9+\-\s()]+$/.test(v)) return null;
+  const phone = normalizePhone(v);
+  return phone.length >= 10 && phone.length <= 15 ? { kind: "phone", value: phone } : null;
+}
+
+/** Sign-in address for a lecturer account; phone accounts get a private placeholder address. */
+export function lecturerAccountEmail(id: Identifier): string {
+  return id.kind === "email" ? id.value : `lecturer.${id.value}@phone.lecturerconnect.app`;
+}
+
+const nameField = loginSchema.shape.name;
+const identifierField = z
+  .string()
+  .trim()
+  .min(1, { message: "Please enter your email or phone number." })
+  .refine((v) => parseIdentifier(v) !== null, { message: "Enter a valid email address or phone number." });
+
+export const lecturerLoginSchema = z.object({
+  name: nameField,
+  identifier: identifierField,
+  password: z.string().min(1, { message: "Please enter your password." }),
+});
+
+export const lecturerRegisterSchema = z.object({
+  name: nameField,
+  identifier: identifierField,
+  password: z
+    .string()
+    .min(8, { message: "Password must be at least 8 characters." })
+    .max(72, { message: "Password must be under 72 characters." }),
+});

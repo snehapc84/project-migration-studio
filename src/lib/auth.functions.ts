@@ -1,11 +1,11 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { loginSchema, namesMatch, normalizeName, normalizePhone } from "./validation";
+import { lecturerRegisterSchema, lecturerAccountEmail, loginSchema, namesMatch, normalizeName, normalizePhone, parseIdentifier } from "./validation";
 
 type Role = "student" | "lecturer";
 export type PhoneLoginResult = { ok: true; tokenHash: string; role: Role } | { ok: false; error: string };
 
-const inputSchema = loginSchema.extend({ role: z.enum(["student", "lecturer"]) });
+const inputSchema = loginSchema.extend({ role: z.literal("student") });
 const GENERIC_ERROR = "Something went wrong while signing you in. Please try again in a moment.";
 
 type Admin = Awaited<typeof import("@/integrations/supabase/client.server")>["supabaseAdmin"];
@@ -43,30 +43,6 @@ export const phoneLogin = createServerFn({ method: "POST" })
     const name = normalizeName(data.name);
 
     try {
-      if (data.role === "lecturer") {
-        const { data: contact, error } = await supabaseAdmin
-          .from("lecturer_contacts")
-          .select("lecturer_id, lecturers(id, name, user_id)")
-          .eq("phone", phone)
-          .maybeSingle();
-        if (error) throw error;
-        const lecturer = contact?.lecturers;
-        if (!lecturer || !namesMatch(lecturer.name, name)) {
-          return {
-            ok: false,
-            error:
-              "We couldn't find a lecturer with this name and phone number. Check your details, or ask the college office to add you.",
-          };
-        }
-        const { userId, tokenHash } = await issueSignInToken(supabaseAdmin, "lecturer", phone, lecturer.name);
-        if (!lecturer.user_id) {
-          await supabaseAdmin.from("lecturers").update({ user_id: userId }).eq("id", lecturer.id).is("user_id", null);
-        } else if (lecturer.user_id !== userId) {
-          return { ok: false, error: "This lecturer profile is linked to another account. Please contact the college office." };
-        }
-        return { ok: true, tokenHash, role: "lecturer" };
-      }
-
       const { data: existing, error } = await supabaseAdmin
         .from("students")
         .select("user_id, name")
@@ -87,6 +63,75 @@ export const phoneLogin = createServerFn({ method: "POST" })
       return { ok: true, tokenHash, role: "student" };
     } catch (err) {
       console.error("phoneLogin failed", err);
+      return { ok: false, error: GENERIC_ERROR };
+    }
+  });
+
+export type RegisterResult = { ok: true; email: string } | { ok: false; error: string };
+
+/** Lecturers create their own password account. A phone that matches a college-listed profile claims it. */
+export const registerLecturer = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => lecturerRegisterSchema.parse(input))
+  .handler(async ({ data }): Promise<RegisterResult> => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const name = normalizeName(data.name);
+    const id = parseIdentifier(data.identifier);
+    if (!id) return { ok: false, error: "Enter a valid email address or phone number." };
+    const email = lecturerAccountEmail(id);
+
+    try {
+      let lecturerId: string | null = null;
+      if (id.kind === "phone") {
+        const { data: contact, error } = await supabaseAdmin
+          .from("lecturer_contacts")
+          .select("lecturer_id, lecturers(id, name, user_id)")
+          .eq("phone", id.value)
+          .maybeSingle();
+        if (error) throw error;
+        const existing = contact?.lecturers;
+        if (existing) {
+          if (existing.user_id) return { ok: false, error: "An account already exists for this phone number. Please log in instead." };
+          if (!namesMatch(existing.name, name)) {
+            return { ok: false, error: "This phone number belongs to a listed lecturer with a different name." };
+          }
+          lecturerId = existing.id;
+        }
+      }
+
+      const created = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password: data.password,
+        email_confirm: true,
+        user_metadata: { name, role: "lecturer" },
+      });
+      if (created.error || !created.data.user) {
+        if (created.error?.code === "email_exists" || created.error?.status === 422) {
+          return { ok: false, error: "An account already exists for this email or phone. Please log in instead." };
+        }
+        if (created.error?.code === "weak_password") {
+          return { ok: false, error: "This password is too weak. Choose a longer, less common password." };
+        }
+        throw created.error ?? new Error("Could not create account");
+      }
+      const userId = created.data.user.id;
+
+      if (lecturerId) {
+        await supabaseAdmin.from("lecturers").update({ user_id: userId }).eq("id", lecturerId).is("user_id", null);
+      } else {
+        const { data: row, error } = await supabaseAdmin
+          .from("lecturers")
+          .insert({ user_id: userId, name, department: "Department not set", designation: "Lecturer" })
+          .select("id")
+          .single();
+        if (error) throw error;
+        if (id.kind === "phone") {
+          await supabaseAdmin.from("lecturer_contacts").insert({ lecturer_id: row.id, phone: id.value });
+        }
+      }
+      await supabaseAdmin.from("user_roles").insert({ user_id: userId, role: "lecturer" });
+      return { ok: true, email };
+    } catch (err) {
+      console.error("registerLecturer failed", err);
       return { ok: false, error: GENERIC_ERROR };
     }
   });

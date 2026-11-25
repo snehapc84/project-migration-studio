@@ -85,6 +85,44 @@ export type Database = {
         }
         Relationships: []
       }
+      messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          lecturer_id: string
+          read_at: string | null
+          sender: string
+          student_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          lecturer_id: string
+          read_at?: string | null
+          sender: string
+          student_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          lecturer_id?: string
+          read_at?: string | null
+          sender?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_lecturer_id_fkey"
+            columns: ["lecturer_id"]
+            isOneToOne: false
+            referencedRelation: "lecturers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           created_at: string
@@ -178,6 +216,22 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      lecturer_conversations: {
+        Args: never
+        Returns: {
+          last_at: string
+          last_body: string
+          last_sender: string
+          student_id: string
+          student_name: string
+          unread: number
+        }[]
+      }
+      owns_lecturer: { Args: { _lecturer_id: string }; Returns: boolean }
+      student_has_messaged: {
+        Args: { _lecturer_id: string; _student_id: string }
         Returns: boolean
       }
     }

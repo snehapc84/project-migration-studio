@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { AvailabilityPanel } from "@/components/lc/AvailabilityPanel";
 import { EditProfileDialog } from "@/components/lc/EditProfileDialog";
 import { LecturerAvatar } from "@/components/lc/LecturerAvatar";
+import { LecturerInbox } from "@/components/lc/LecturerInbox";
 import { LogoutButton } from "@/components/lc/LogoutButton";
 import { PageLoading } from "@/components/lc/PageStates";
 import { SiteFooter, SiteHeader } from "@/components/lc/SiteHeader";
@@ -183,6 +184,8 @@ function Dashboard({ lecturer }: { lecturer: Lecturer }) {
           onDelete={setDeleting}
         />
       </section>
+
+      <LecturerInbox lecturerId={lecturer.id} />
 
       <EditProfileDialog open={profileOpen} onOpenChange={setProfileOpen} lecturer={lecturer} />
       <TimetableEntryDialog

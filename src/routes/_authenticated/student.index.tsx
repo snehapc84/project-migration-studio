@@ -1,6 +1,6 @@
-import { useSuspenseQuery } from "@tanstack/react-query";
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { Search, UsersRound, X } from "lucide-react";
+import { useQuery, useSuspenseQuery } from "@tanstack/react-query";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
+import { MessageCircle, Search, UsersRound, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { LecturerCard } from "@/components/lc/LecturerCard";
@@ -8,6 +8,7 @@ import { LogoutButton } from "@/components/lc/LogoutButton";
 import { PageLoading } from "@/components/lc/PageStates";
 import { SiteFooter, SiteHeader } from "@/components/lc/SiteHeader";
 import { cn } from "@/lib/utils";
+import { studentUnreadQuery } from "@/lib/messages";
 import { lecturersQuery, myStudentQuery, useLiveUpdates, useNow } from "@/lib/queries";
 import { STATUS_META, type AvailabilityStatus } from "@/lib/status";
 
@@ -42,6 +43,8 @@ function StudentDashboard() {
   const { data: student } = useSuspenseQuery(myStudentQuery(user.id));
   useLiveUpdates();
   const now = useNow();
+  const { data: unread } = useQuery(studentUnreadQuery(user.id));
+  const unreadFrom = lecturers.filter((l) => (unread?.[l.id] ?? 0) > 0);
 
   const [query, setQuery] = useState("");
   const [department, setDepartment] = useState<string>("all");
@@ -78,6 +81,22 @@ function StudentDashboard() {
       </SiteHeader>
 
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-12">
+        {unreadFrom.length > 0 && (
+          <div role="status" className="mb-6 flex flex-wrap items-center gap-2 rounded-2xl border border-butter-strong bg-butter px-5 py-3 text-sm text-navy">
+            <MessageCircle className="size-4 shrink-0" />
+            <span className="font-semibold">New replies from:</span>
+            {unreadFrom.map((l) => (
+              <Link
+                key={l.id}
+                to="/student/lecturers/$lecturerId"
+                params={{ lecturerId: l.id }}
+                className="rounded-full bg-card px-3 py-1 font-medium shadow-sm hover:underline"
+              >
+                {l.name} ({unread?.[l.id]})
+              </Link>
+            ))}
+          </div>
+        )}
         <section className="animate-fade-up">
           <p className="text-sm font-semibold uppercase tracking-[0.16em] text-cobalt">Student dashboard</p>
           <h1 className="mt-1 font-display text-3xl font-semibold text-navy sm:text-4xl">Welcome, {firstName}</h1>

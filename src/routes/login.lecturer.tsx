@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { FlaskConical, Presentation } from "lucide-react";
 import { useState } from "react";
-import { LoginForm } from "@/components/lc/LoginForm";
+import { LecturerAuthForm } from "@/components/lc/LecturerAuthForm";
 import { LoginLayout } from "@/components/lc/LoginLayout";
 
 const DEMO_ACCOUNTS = [
@@ -35,7 +35,7 @@ function LecturerLogin() {
       icon={<Presentation className="size-7" />}
       eyebrow="For lecturers"
       title="Lecturer Login"
-      subtitle="Use the name and phone number registered with the college office."
+      subtitle="Log in with your password, or register a new lecturer account."
       switchTo={{ to: "/login/student", label: "I'm a student" }}
       aside={
         <div className="rounded-3xl border border-butter-strong bg-butter p-6 shadow-soft">
@@ -44,8 +44,8 @@ function LecturerLogin() {
             <h2 className="font-display text-xl font-semibold">Demo accounts</h2>
           </div>
           <p className="mb-4 text-sm text-navy/75">
-            Fictional lecturers for trying the app. Tap one to fill the form — their sample details can be edited or
-            replaced.
+            Fictional lecturers for trying the app. Tap one to register it with a password of your choice, then log in
+            with that phone number.
           </p>
           <ul className="space-y-2">
             {DEMO_ACCOUNTS.map((a) => (
@@ -67,9 +67,9 @@ function LecturerLogin() {
         </div>
       }
     >
-      <LoginForm role="lecturer" prefill={prefill} />
+      <LecturerAuthForm prefill={prefill} />
       <p className="mt-5 text-center text-xs text-muted-foreground">
-        Not on the list? Ask the college office to add your profile.
+        Your account is private — only you can manage your profile, timetable and messages.
       </p>
     </LoginLayout>
   );

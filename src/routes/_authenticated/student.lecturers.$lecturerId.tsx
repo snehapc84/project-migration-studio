@@ -2,6 +2,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import { ArrowLeft, BookOpen, Building2, CalendarClock, Clock, MapPin, MessageSquareText, UserX } from "lucide-react";
 import { LecturerAvatar } from "@/components/lc/LecturerAvatar";
+import { MessageLecturerButton } from "@/components/lc/MessageLecturerButton";
 import { LogoutButton } from "@/components/lc/LogoutButton";
 import { PageLoading } from "@/components/lc/PageStates";
 import { SiteFooter, SiteHeader } from "@/components/lc/SiteHeader";
@@ -37,6 +38,7 @@ export const Route = createFileRoute("/_authenticated/student/lecturers/$lecture
 
 function LecturerProfile() {
   const { lecturerId } = Route.useParams();
+  const { user } = Route.useRouteContext();
   const { data: lecturer } = useSuspenseQuery(lecturerQuery(lecturerId));
   const { data: entries } = useSuspenseQuery(timetableQuery(lecturerId));
   useLiveUpdates();
@@ -65,7 +67,7 @@ function LecturerProfile() {
             </Button>
           </div>
         ) : (
-          <ProfileBody lecturer={lecturer} entries={entries} now={now} />
+          <ProfileBody lecturer={lecturer} entries={entries} now={now} studentId={user.id} />
         )}
       </main>
       <SiteFooter />
@@ -77,10 +79,12 @@ function ProfileBody({
   lecturer,
   entries,
   now,
+  studentId,
 }: {
   lecturer: Lecturer;
   entries: TimetableEntry[];
   now: Date;
+  studentId: string;
 }) {
   const inClass = currentClass(entries, now);
 
@@ -103,6 +107,9 @@ function ProfileBody({
                   Demo profile · sample data
                 </span>
               )}
+              <div>
+                <MessageLecturerButton lecturerId={lecturer.id} lecturerName={lecturer.name} studentId={studentId} />
+              </div>
             </div>
           </div>
         </div>

@@ -8,6 +8,13 @@
       "when": 1795617549987,
       "tag": "0000_lecturer_connect_core",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795618315939,
+      "tag": "0001_student_lecturer_messages",
+      "breakpoints": true
     }
   ]
 }

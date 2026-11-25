@@ -9,7 +9,7 @@ import { phoneLogin } from "@/lib/auth.functions";
 import { loginSchema } from "@/lib/validation";
 import { Field } from "./TimetableEntryDialog";
 
-type Role = "student" | "lecturer";
+type Role = "student";
 
 export function LoginForm({
   role,
